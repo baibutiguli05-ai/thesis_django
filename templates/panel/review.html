@@ -1,0 +1,92 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}Бекіту орталығы{% endblock %}{% block crumb %}Бекіту орталығы{% endblock %}
+{% block actions %}<span class="badge badge-gold">Әкімші</span>{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><span class="eyebrow">Әкімші</span><h1>Бекіту орталығы</h1>
+        <p>Жетекші мен тақырып өтінімдері екі жақтың — оқытушы мен әкімшінің бекітуінен кейін ғана ресми күшіне енеді.</p></div>
+</div>
+
+<div class="stats">
+    <div class="card stat"><div class="stat-top"><span class="stat-label">Жетекші өтінімдері</span><span class="stat-icon"><i class="fa-solid fa-user-plus"></i></span></div><div class="stat-value">{{ counts.supervisor }}</div><div class="stat-foot">әкімші шешімін күтуде</div></div>
+    <div class="card stat"><div class="stat-top"><span class="stat-label">Тақырып өтінімдері</span><span class="stat-icon"><i class="fa-solid fa-file-signature"></i></span></div><div class="stat-value">{{ counts.topics }}</div><div class="stat-foot">әкімші шешімін күтуде</div></div>
+    <div class="card stat"><div class="stat-top"><span class="stat-label">Оқытушы тақырыптары</span><span class="stat-icon"><i class="fa-solid fa-lightbulb"></i></span></div><div class="stat-value">{{ counts.teacher_topics }}</div><div class="stat-foot">тексеруді күтуде</div></div>
+    <div class="card stat"><div class="stat-top"><span class="stat-label">Студенттер</span><span class="stat-icon"><i class="fa-solid fa-user-graduate"></i></span></div><div class="stat-value">{{ counts.assigned }} <span class="stat-of">/ {{ counts.students }}</span></div><div class="stat-foot">жетекшісі бар · {{ counts.with_topic }} тақырыбы бар</div></div>
+</div>
+
+<div class="tabs" data-tabs>
+    <button type="button" data-tab="#supervisors"><i class="fa-solid fa-user-plus"></i> Жетекші өтінімдері {% if counts.supervisor %}<span class="tab-count">{{ counts.supervisor }}</span>{% endif %}</button>
+    <button type="button" data-tab="#applications"><i class="fa-solid fa-file-signature"></i> Тақырып өтінімдері {% if counts.topics %}<span class="tab-count">{{ counts.topics }}</span>{% endif %}</button>
+    <button type="button" data-tab="#topics"><i class="fa-solid fa-lightbulb"></i> Оқытушы тақырыптары {% if counts.teacher_topics %}<span class="tab-count">{{ counts.teacher_topics }}</span>{% endif %}</button>
+    <button type="button" data-tab="#quotas"><i class="fa-solid fa-sliders"></i> CS квоталары</button>
+</div>
+
+<section class="card" id="supervisors">
+    {% if sup %}<div class="table-wrap"><table class="table">
+        <thead><tr><th>Студент</th><th>Жетекші</th><th>CS орындары</th><th>Күні</th><th>Бекіту</th><th>Әрекет</th></tr></thead>
+        <tbody>{% for r in sup %}
+            <tr>
+                <td><div class="supervisor"><span class="avatar">{{ r.student.full_name|initials }}</span><div><strong>{{ r.student.full_name }}</strong><span>{{ r.student.group_name }} · {{ r.student.major }}</span></div></div></td>
+                <td>{{ r.teacher.full_name }}</td>
+                <td><span class="{% if r.cs_full %}text-danger{% endif %}">{{ r.cs_taken }} / {{ r.teacher.cs_quota }}</span></td>
+                <td class="muted">{{ r.created_at|date:"d.m.Y" }}</td>
+                <td>{% chips r %}</td>
+                <td>{% if r.admin_status == 'pending' and r.teacher_status != 'rejected' %}{% url 'panel_review_request' r.id as act %}{% include 'panel/_buttons.html' with action=act disabled=r.cs_full %}{% else %}<div class="actions">{% badge r.status %}</div>{% endif %}</td>
+            </tr>
+        {% endfor %}</tbody>
+    </table></div>{% else %}<div class="empty"><i class="fa-regular fa-envelope-open"></i><strong>Өтінімдер жоқ</strong></div>{% endif %}
+</section>
+
+<section class="card" id="applications" hidden>
+    {% if apps %}<div class="table-wrap"><table class="table">
+        <thead><tr><th>Студент</th><th>Тақырып</th><th>Жетекші</th><th>Түрі</th><th>Бекіту</th><th>Әрекет</th></tr></thead>
+        <tbody>{% for a in apps %}
+            <tr>
+                <td><div class="supervisor"><span class="avatar">{{ a.student.full_name|initials }}</span><div><strong>{{ a.student.full_name }}</strong><span>{{ a.student.group_name }}</span></div></div></td>
+                <td class="wrap" title="{{ a.topic.description }}">{{ a.topic.title }}</td>
+                <td>{{ a.topic.teacher.full_name }}</td>
+                <td>{% if a.topic.proposed_by == 'student' %}<span class="badge badge-gold no-dot">Студент ұсынған</span>{% else %}<span class="badge no-dot">Оқытушының</span>{% endif %}</td>
+                <td>{% chips a %}</td>
+                <td>{% if a.admin_status == 'pending' and a.teacher_status != 'rejected' %}{% url 'panel_review_application' a.id as act %}{% include 'panel/_buttons.html' with action=act %}{% else %}<div class="actions">{% badge a.status %}</div>{% endif %}</td>
+            </tr>
+        {% endfor %}</tbody>
+    </table></div>{% else %}<div class="empty"><i class="fa-regular fa-envelope-open"></i><strong>Өтінімдер жоқ</strong></div>{% endif %}
+</section>
+
+<section class="card" id="topics" hidden>
+    {% if topics %}<div class="table-wrap"><table class="table">
+        <thead><tr><th>Тақырып</th><th>Оқытушы</th><th>Ұсынылды</th><th>Статус</th><th>Әрекет</th></tr></thead>
+        <tbody>{% for t in topics %}
+            <tr>
+                <td class="wrap"><strong style="font-weight:600">{{ t.title }}</strong>{% if t.description %}<div class="muted-text" style="margin-top:2px;">{{ t.description }}</div>{% endif %}</td>
+                <td>{{ t.teacher.full_name }}</td>
+                <td class="muted">{{ t.created_at|date:"d.m.Y" }}</td>
+                <td>{% badge t.status %}</td>
+                <td>{% if t.status == 'pending' %}{% url 'panel_review_topic' t.id as act %}{% include 'panel/_buttons.html' with action=act %}{% else %}<div class="actions"><span class="muted-text">{{ t.reviewed_at|date:"d.m.Y"|default:"—" }}</span></div>{% endif %}</td>
+            </tr>
+        {% endfor %}</tbody>
+    </table></div>{% else %}<div class="empty"><i class="fa-regular fa-lightbulb"></i><strong>Тақырыптар жоқ</strong></div>{% endif %}
+</section>
+
+<section class="card" id="quotas" hidden>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th>Жетекші</th><th>Кафедра</th><th>CS студенттер</th><th>Барлық студент</th><th>Тақырыптар</th><th>CS квотасы</th></tr></thead>
+        <tbody>{% for t in teachers %}
+            <tr>
+                <td><div class="supervisor"><span class="avatar">{{ t.full_name|initials }}</span><div><strong>{{ t.full_name }}</strong><span>{{ t.academic_title }}</span></div></div></td>
+                <td class="wrap">{{ t.department }}</td>
+                <td style="min-width:150px;">
+                    <div class="quota-row" style="margin-bottom:6px;"><span>{{ t.cs_taken_n }} / {{ t.cs_quota }}</span>
+                        <span class="{% if not t.rem %}text-danger{% endif %}">{{ t.rem }} бос</span></div>
+                    <div class="quota-bar"><span style="width:{{ t.cs_taken_n|percent:t.cs_quota }}%" class="{% if not t.rem %}full{% endif %}"></span></div>
+                </td>
+                <td>{{ t.students_n }}</td>
+                <td>{{ t.topics_n }} <span class="muted-text">({{ t.topics_free }} бос)</span></td>
+                <td><form method="post" action="{% url 'panel_quota' t.id %}" class="quota-form">{% csrf_token %}
+                    <input class="input" type="number" name="cs_quota" min="0" max="50" value="{{ t.cs_quota }}">
+                    <button class="btn btn-ghost btn-sm" title="Сақтау"><i class="fa-solid fa-floppy-disk"></i></button></form></td>
+            </tr>
+        {% endfor %}</tbody>
+    </table></div>
+</section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}{{ title }}{% endblock %}{% block crumb %}{{ title }}{% endblock %}
+{% block actions %}{% if editable %}<a class="btn btn-primary" href="{% url 'panel_create' name %}"><i class="fa-solid fa-plus"></i><span>Жазба қосу</span></a>{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><span class="eyebrow">Кесте · CRUD</span><h1>{{ title }}</h1><p>Барлығы {{ page.paginator.count }} жазба · {{ page.number }} / {{ page.paginator.num_pages }} бет</p></div>
+    <form method="get" class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ q }}" placeholder="Іздеу…"></form>
+</div>
+<section class="card">
+    {% if rows %}
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th>ID</th>{% for h in headers %}<th>{{ h }}</th>{% endfor %}<th>Әрекет</th></tr></thead>
+        <tbody>{% for row in rows %}
+            <tr>
+                <td class="id">#{{ row.obj.pk }}</td>
+                {% for field, val in row.cells %}
+                    {% if field in status_fields %}<td>{% badge val %}</td>
+                    {% elif val is None or val == '' %}<td class="muted">—</td>
+                    {% elif field == 'created_at' %}<td class="muted">{{ val|date:"d.m.Y H:i" }}</td>
+                    {% else %}<td title="{{ val }}">{{ val }}</td>{% endif %}
+                {% endfor %}
+                <td><div class="actions">
+                    {% if editable %}<a class="btn btn-ghost btn-sm" href="{% url 'panel_edit' name row.obj.pk %}" title="Өзгерту"><i class="fa-regular fa-pen-to-square"></i></a>{% endif %}
+                    <form method="post" action="{% url 'panel_delete' name row.obj.pk %}" data-confirm="Бұл жазбаны өшіруге сенімдісіз бе? Байланысты жазбалар да өшуі мүмкін.">{% csrf_token %}
+                        <button class="btn btn-ghost btn-sm" title="Өшіру"><i class="fa-regular fa-trash-can"></i></button></form>
+                </div></td>
+            </tr>
+        {% endfor %}</tbody>
+    </table></div>
+    <div class="card-foot">
+        <span>Бет: {{ page.number }} / {{ page.paginator.num_pages }}</span>
+        <div class="pagination">
+            <a href="?page={% if page.has_previous %}{{ page.previous_page_number }}{% else %}1{% endif %}&q={{ q|urlencode }}" class="{% if not page.has_previous %}disabled{% endif %}"><i class="fa-solid fa-chevron-left"></i></a>
+            {% for n in page.paginator.page_range %}<a href="?page={{ n }}&q={{ q|urlencode }}" class="{% if n == page.number %}active{% endif %}">{{ n }}</a>{% endfor %}
+            <a href="?page={% if page.has_next %}{{ page.next_page_number }}{% else %}{{ page.paginator.num_pages }}{% endif %}&q={{ q|urlencode }}" class="{% if not page.has_next %}disabled{% endif %}"><i class="fa-solid fa-chevron-right"></i></a>
+        </div>
+    </div>
+    {% else %}<div class="empty"><i class="fa-regular fa-folder-open"></i><strong>Деректер жоқ</strong>{% if q %}«{{ q }}» бойынша ештеңе табылмады.{% else %}Бұл кестеде әзірге жазба жоқ.{% endif %}</div>{% endif %}
+</section>
+{% endblock %}

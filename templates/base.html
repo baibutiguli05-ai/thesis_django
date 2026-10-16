@@ -1,0 +1,169 @@
+{% load static thesis_tags %}<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Univer Thesis{% endblock %} — Univer Thesis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,500&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<div class="app">
+
+    <aside class="sidebar">
+        <a class="brand" href="{% url 'home' %}">
+            <span class="brand-mark"><i class="fa-solid fa-graduation-cap"></i></span>
+            <span class="brand-name">Univer Thesis<span class="brand-sub">{% if role == 'admin' %}Басқару панелі{% elif role == 'teacher' %}Оқытушы кабинеті{% else %}Студент кабинеті{% endif %}</span></span>
+        </a>
+
+        <nav class="nav">
+        {% if role == 'student' %}
+            <div class="nav-label">Дипломдық жұмыс</div>
+            <a href="{% url 'student_home' %}" class="{% if active == 'home' %}active{% endif %}"><i class="fa-solid fa-house"></i><span>Басты бет</span></a>
+            <a href="{% url 'student_teachers' %}" class="{% if active == 'teachers' %}active{% endif %}"><i class="fa-solid fa-user-tie"></i><span>Ғылыми жетекшілер</span></a>
+            <a href="{% url 'student_topics' %}" class="{% if active == 'topics' %}active{% endif %}"><i class="fa-solid fa-book-bookmark"></i><span>Тақырып таңдау</span></a>
+            <a href="{% url 'student_progress' %}" class="{% if active == 'progress' %}active{% endif %}"><i class="fa-solid fa-chart-line"></i><span>Жұмыс барысы</span></a>
+            <a href="{% url 'topic_list' %}" class="{% if active == 'catalog' %}active{% endif %}"><i class="fa-solid fa-layer-group"></i><span>Тақырыптар каталогы</span></a>
+        {% elif role == 'teacher' %}
+            <div class="nav-label">Жетекшілік</div>
+            <a href="{% url 'teacher_home' %}" class="{% if active == 'home' %}active{% endif %}"><i class="fa-solid fa-inbox"></i><span>Өтінімдер</span>
+                {% with n=counts.requests|add:counts.applications %}{% if n %}<span class="nav-count">{{ n }}</span>{% endif %}{% endwith %}</a>
+            <a href="{% url 'teacher_topics' %}" class="{% if active == 'topics' %}active{% endif %}"><i class="fa-solid fa-lightbulb"></i><span>Менің тақырыптарым</span></a>
+            <a href="{% url 'teacher_students' %}" class="{% if active == 'students' %}active{% endif %}"><i class="fa-solid fa-user-graduate"></i><span>Студенттер барысы</span>
+                {% if counts.unreviewed %}<span class="nav-count">{{ counts.unreviewed }}</span>{% endif %}</a>
+            <a href="{% url 'topic_list' %}" class="{% if active == 'catalog' %}active{% endif %}"><i class="fa-solid fa-layer-group"></i><span>Тақырыптар каталогы</span></a>
+        {% elif role == 'admin' %}
+            <div class="nav-label">Бекіту</div>
+            <a href="{% url 'panel' %}" class="{% if active == 'review' %}active{% endif %}"><i class="fa-solid fa-gavel"></i><span>Бекіту орталығы</span>
+                {% with n=counts.supervisor|add:counts.topics|add:counts.teacher_topics %}{% if n %}<span class="nav-count">{{ n }}</span>{% endif %}{% endwith %}</a>
+            <div class="nav-label">Каталог</div>
+            <a href="{% url 'topic_list' %}" class="{% if active == 'catalog' %}active{% endif %}"><i class="fa-solid fa-layer-group"></i><span>Тақырыптар каталогы</span></a>
+            <div class="nav-label">Кестелер</div>
+            <a href="{% url 'panel_table' 'teachers' %}" class="{% if active == 'teachers' %}active{% endif %}"><i class="fa-solid fa-chalkboard-user"></i><span>Оқытушылар</span></a>
+            <a href="{% url 'panel_table' 'students' %}" class="{% if active == 'students' %}active{% endif %}"><i class="fa-solid fa-user-graduate"></i><span>Студенттер</span></a>
+            <a href="{% url 'panel_table' 'topics' %}" class="{% if active == 'topics' %}active{% endif %}"><i class="fa-solid fa-lightbulb"></i><span>Тақырыптар</span></a>
+            <a href="{% url 'panel_table' 'requests' %}" class="{% if active == 'requests' %}active{% endif %}"><i class="fa-solid fa-user-plus"></i><span>Жетекші өтінімдері</span></a>
+            <a href="{% url 'panel_table' 'applications' %}" class="{% if active == 'applications' %}active{% endif %}"><i class="fa-solid fa-file-signature"></i><span>Тақырып өтінімдері</span></a>
+            <a href="{% url 'panel_table' 'files' %}" class="{% if active == 'files' %}active{% endif %}"><i class="fa-solid fa-folder-open"></i><span>Жұмыс файлдары</span></a>
+            <div class="nav-label">Құралдар</div>
+            <a href="/api/" target="_blank"><i class="fa-solid fa-code"></i><span>REST API</span><span class="nav-ext"><i class="fa-solid fa-arrow-up-right-from-square"></i></span></a>
+            <a href="/admin/" target="_blank"><i class="fa-solid fa-screwdriver-wrench"></i><span>Django admin</span><span class="nav-ext"><i class="fa-solid fa-arrow-up-right-from-square"></i></span></a>
+        {% endif %}
+        </nav>
+
+        <div class="sidebar-foot">
+            {% with name=user.get_full_name|default:user.username %}
+            <div class="me">
+                <div class="avatar">{{ name|initials }}</div>
+                <div style="min-width:0">
+                    <div class="me-name">{{ name }}</div>
+                    <div class="me-role">{{ role|role_label }}</div>
+                </div>
+                <a class="logout" href="{% url 'logout' %}" title="Шығу"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+            </div>
+            {% endwith %}
+        </div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+                <button class="icon-btn menu-toggle" onclick="document.body.classList.toggle('nav-open')" aria-label="Мәзір"><i class="fa-solid fa-bars"></i></button>
+                <div class="crumbs"><span>{{ role|role_label }}</span><i class="fa-solid fa-chevron-right"></i><strong>{% block crumb %}{% endblock %}</strong></div>
+            </div>
+            <div class="topbar-actions">{% block actions %}{% endblock %}</div>
+        </header>
+
+        <main class="content">
+            {% if messages %}
+                <div class="messages">
+                {% for m in messages %}
+                    <div class="alert alert-{% if m.tags == 'success' %}success{% else %}error{% endif %}" style="margin:0">
+                        <i class="fa-solid {% if m.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i><span>{{ m }}</span>
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+{% block modals %}{% endblock %}
+
+<!-- Бет ішіндегі растау терезесі (кіріктірілген браузерлер confirm()-ді бұғаттайды) -->
+<div class="modal" id="confirmModal">
+    <div class="modal-dialog modal-sm" role="alertdialog" aria-modal="true">
+        <div class="modal-body confirm-body">
+            <span class="confirm-icon"><i class="fa-solid fa-circle-question"></i></span>
+            <p id="confirmText"></p>
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" data-close>Бас тарту</button>
+                <button type="button" class="btn btn-primary" id="confirmOk">Иә, растау</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    // Растау терезесі: <form data-confirm="Сұрақ?">
+    const cm = document.getElementById('confirmModal'), ct = document.getElementById('confirmText'), ok = document.getElementById('confirmOk');
+    let pending = null;
+    document.addEventListener('submit', e => {
+        const f = e.target;
+        if (!f.matches('form[data-confirm]') || f.dataset.confirmed === '1') return;
+        e.preventDefault(); pending = f; ct.textContent = f.dataset.confirm; cm.classList.add('open'); setTimeout(() => ok.focus(), 100);
+    }, true);
+    ok.addEventListener('click', () => { if (!pending) return; pending.dataset.confirmed = '1'; cm.classList.remove('open'); ok.disabled = true; pending.submit(); });
+
+    // Модальдар: data-open="#id" (+ data-fill-x="мән" → [data-slot="x"])
+    document.addEventListener('click', e => {
+        const opener = e.target.closest('[data-open]');
+        if (opener) {
+            e.preventDefault();
+            const m = document.querySelector(opener.dataset.open);
+            if (m) {
+                Object.keys(opener.dataset).forEach(k => {
+                    if (!k.startsWith('fill')) return;
+                    const name = k.slice(4).replace(/^./, c => c.toLowerCase()).replace(/[A-Z]/g, c => '_' + c.toLowerCase());
+                    m.querySelectorAll('[data-slot="' + name + '"]').forEach(el => {
+                        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) el.value = opener.dataset[k]; else el.textContent = opener.dataset[k];
+                    });
+                    m.querySelectorAll('form[data-action-tpl]').forEach(f => f.action = f.dataset.actionTpl.replace('0', opener.dataset.fillId || '0'));
+                });
+                m.classList.add('open');
+                const f = m.querySelector('input:not([type=hidden]), textarea');
+                if (f) setTimeout(() => f.focus(), 150);
+            }
+        }
+        if (e.target.closest('[data-close]') || e.target.classList.contains('modal')) {
+            const m = e.target.closest('.modal'); if (m) m.classList.remove('open');
+        }
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open')); });
+
+    // Іздеу: <input data-filter="#gridId">
+    document.querySelectorAll('[data-filter]').forEach(inp => inp.addEventListener('input', () => {
+        const q = inp.value.trim().toLowerCase(), box = document.querySelector(inp.dataset.filter);
+        if (!box) return; let shown = 0;
+        box.querySelectorAll('[data-item]').forEach(el => { const hit = el.textContent.toLowerCase().includes(q); el.style.display = hit ? '' : 'none'; if (hit) shown++; });
+        const empty = document.querySelector(inp.dataset.filter + '-empty'); if (empty) empty.style.display = shown ? 'none' : 'block';
+    }));
+
+    // Табтар
+    document.querySelectorAll('[data-tabs]').forEach(tabs => {
+        const btns = tabs.querySelectorAll('[data-tab]');
+        const show = sel => { btns.forEach(b => { const on = b.dataset.tab === sel; b.classList.toggle('active', on); const p = document.querySelector(b.dataset.tab); if (p) p.hidden = !on; }); try { history.replaceState(null, '', sel); } catch (e) {} };
+        btns.forEach(b => b.addEventListener('click', () => show(b.dataset.tab)));
+        const h = location.hash && tabs.querySelector('[data-tab="' + location.hash + '"]');
+        show(h ? location.hash : btns[0].dataset.tab);
+    });
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,39 @@
+{% load static %}<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} — Univer Thesis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,500&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<div class="auth">
+    <aside class="auth-aside">
+        <a class="brand" href="{% url 'login' %}">
+            <span class="brand-mark"><i class="fa-solid fa-graduation-cap"></i></span>
+            <span class="brand-name">Univer Thesis<span class="brand-sub">Дипломдық жұмыс порталы</span></span>
+        </a>
+        <div class="auth-hero">{% block hero %}{% endblock %}</div>
+        <div class="auth-foot">© {% now "Y" %} Univer Thesis System · Django + PostgreSQL</div>
+    </aside>
+    <main class="auth-main">
+        <div class="auth-card">
+            <a class="brand mobile-brand" href="{% url 'login' %}">
+                <span class="brand-mark"><i class="fa-solid fa-graduation-cap"></i></span>
+                <span class="brand-name">Univer Thesis</span>
+            </a>
+            {% for m in messages %}
+                <div class="alert alert-{% if m.tags == 'success' %}success{% else %}error{% endif %}">
+                    <i class="fa-solid {% if m.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i><span>{{ m }}</span>
+                </div>
+            {% endfor %}
+            {% block card %}{% endblock %}
+        </div>
+    </main>
+</div>
+</body>
+</html>

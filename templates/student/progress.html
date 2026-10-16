@@ -1,0 +1,59 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}Жұмыс барысы{% endblock %}{% block crumb %}Жұмыс барысы{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><span class="eyebrow">3-кезең · Жұмыс барысы</span><h1>Жұмыс барысы</h1><p>Әр кезең бойынша файлдарды жүктеңіз — жетекшіңіз оларды көріп, пікір қалдырады.</p></div>
+</div>
+{% if not topic %}
+    <div class="card empty"><i class="fa-solid fa-lock"></i><strong>Тақырыбыңыз әлі бекітілмеген</strong>
+        Тақырып жетекші мен әкімші тарапынан ресми бекітілгеннен кейін файл жүктей аласыз.
+        <div style="margin-top:18px;"><a class="btn btn-primary" href="{% url 'student_topics' %}">Тақырып таңдау <i class="fa-solid fa-arrow-right"></i></a></div></div>
+{% else %}
+<div class="split">
+    <section class="card">
+        <div class="card-head"><div><h3><i class="fa-solid fa-cloud-arrow-up"></i>Жаңа кезеңді жүктеу</h3><div class="sub">{{ topic.title }}</div></div></div>
+        <div class="card-body">
+            <form method="post" action="{% url 'student_upload' %}" enctype="multipart/form-data">{% csrf_token %}
+                <div class="field"><label for="u-title">Кезең атауы</label><div class="control"><input type="text" id="u-title" name="title" required maxlength="200" placeholder="Мысалы: 2-тарау — Әдістеме"></div></div>
+                <div class="field"><label for="u-note">Түсініктеме <span class="hint">· міндетті емес</span></label><div class="control"><textarea id="u-note" name="note" rows="3" placeholder="Не істелді, қандай сұрақтар бар…"></textarea></div></div>
+                <div class="field"><label>Файл</label>
+                    <label class="dropzone" id="dropzone">
+                        <input type="file" name="file" id="u-file" required accept="{{ accept }}">
+                        <i class="fa-solid fa-file-arrow-up"></i><strong id="dz-name">Файлды таңдаңыз немесе осында сүйреңіз</strong><span>PDF, Word, PowerPoint, ZIP, суреттер · 20 MB дейін</span>
+                    </label></div>
+                <button class="btn btn-primary btn-block btn-lg" type="submit"><i class="fa-solid fa-upload"></i> Жүктеу</button>
+            </form>
+        </div>
+    </section>
+    <section class="card">
+        <div class="card-head"><div><h3><i class="fa-solid fa-timeline"></i>Жүктелген файлдар</h3><div class="sub">Жетекші: {{ teacher.full_name }}</div></div><span class="badge badge-info no-dot">{{ files|length }} файл</span></div>
+        {% if files %}
+            <ol class="timeline">{% for f in files %}
+                <li>
+                    <div class="tl-dot {% if f.teacher_comment %}is-reviewed{% endif %}"><i class="fa-regular fa-file-lines"></i></div>
+                    <div class="tl-body">
+                        <div class="tl-head"><strong>{{ f.title }}</strong><span class="muted-text">{{ f.created_at|date:"d.m.Y H:i" }}</span></div>
+                        {% if f.note %}<p>{{ f.note|linebreaksbr }}</p>{% endif %}
+                        {% if f.file %}<a class="file-pill" href="{% url 'download' f.id %}"><i class="fa-solid fa-paperclip"></i>{{ f.original_name }}<span>{{ f.file_size|filesize }}</span></a>{% endif %}
+                        {% if f.teacher_comment %}
+                            <div class="comment"><span class="avatar">{{ teacher.full_name|initials }}</span><div><strong>{{ teacher.full_name }}</strong> · <span class="muted-text">{{ f.commented_at|date:"d.m.Y" }}</span><p>{{ f.teacher_comment|linebreaksbr }}</p></div></div>
+                        {% else %}<span class="muted-text"><i class="fa-regular fa-clock"></i> Жетекшінің пікірі күтілуде</span>{% endif %}
+                    </div>
+                </li>
+            {% endfor %}</ol>
+        {% else %}<div class="empty"><i class="fa-regular fa-folder-open"></i><strong>Әзірге файл жоқ</strong>Алғашқы кезеңді жүктеңіз.</div>{% endif %}
+    </section>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+const inp = document.getElementById('u-file'), dz = document.getElementById('dropzone'), nm = document.getElementById('dz-name');
+if (inp) {
+    inp.addEventListener('change', () => { if (inp.files[0]) { nm.textContent = inp.files[0].name; dz.classList.add('has-file'); } });
+    ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, () => dz.classList.remove('drag')));
+    dz.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files[0]) { inp.files = e.dataTransfer.files; inp.dispatchEvent(new Event('change')); } });
+}
+</script>
+{% endblock %}

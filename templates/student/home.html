@@ -1,0 +1,104 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}Басты бет{% endblock %}{% block crumb %}Басты бет{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Студенттің жеке кабинеті · {{ student.group_name|default:student.major }}</span>
+        <h1>Сәлеметсіз бе, {{ student.full_name|first_name }}</h1>
+        <p>Дипломдық жұмыстың үш кезеңі: жетекші → тақырып → жұмыс барысы.</p>
+    </div>
+</div>
+
+<section class="hero-status">
+    <div>
+        <span class="eyebrow">Келесі қадам</span>
+        <h2>{{ next.0 }}</h2>
+        <div class="hero-meta"><span>{{ next.1 }}</span></div>
+        <a href="{% url next.2 %}" class="btn btn-gold" style="margin-top:18px;">{{ next.3 }} <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+    <div class="progress-steps">
+        {% for label, state, prev_done in steps %}
+            {% if not forloop.first %}<div class="bar {% if prev_done %}done{% endif %}"></div>{% endif %}
+            <div class="step {% if state == 'done' %}done{% elif state == 'pending' or state == 'todo' %}current{% endif %}">
+                <span class="dot">{% if state == 'done' %}<i class="fa-solid fa-check"></i>{% elif state == 'pending' %}<i class="fa-solid fa-hourglass-half"></i>{% else %}{{ forloop.counter }}{% endif %}</span>{{ label }}
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<div class="journey">
+    <article class="card journey-card is-{{ sup_state }}">
+        <div class="journey-head">
+            <span class="journey-num">01</span>
+            {% if sup_state == 'done' %}{% badge 'approved' %}{% elif sup_state == 'pending' %}{% badge 'pending' %}{% elif sup_request.status == 'rejected' %}{% badge 'rejected' %}{% else %}<span class="badge no-dot">Басталмаған</span>{% endif %}
+        </div>
+        <h3>Ғылыми жетекші</h3>
+        {% if teacher %}
+            <div class="person"><span class="avatar">{{ teacher.full_name|initials }}</span><div><strong>{{ teacher.full_name }}</strong><span>{{ teacher.academic_title }}</span></div></div>
+            <p class="journey-text">{{ teacher.department }}{% if teacher.email %} · {{ teacher.email }}{% endif %}</p>
+        {% elif sup_state == 'pending' %}
+            <div class="person"><span class="avatar">{{ sup_request.teacher.full_name|initials }}</span><div><strong>{{ sup_request.teacher.full_name }}</strong><span>Өтінім: {{ sup_request.created_at|date:"d.m.Y" }}</span></div></div>
+            <div class="journey-text">{% chips sup_request %}</div>
+        {% else %}
+            <p class="journey-text">{% if sup_request.status == 'rejected' %}{{ sup_request.teacher.full_name }} өтінімді қабылдамады. Басқа жетекшіні таңдаңыз.{% else %}Әзірге жетекші таңдалмаған. Жетекшінің бос орындары мен тақырыптарын қараңыз.{% endif %}</p>
+            <a class="btn btn-primary btn-sm" href="{% url 'student_teachers' %}">Жетекші таңдау</a>
+        {% endif %}
+    </article>
+
+    <article class="card journey-card is-{{ top_state }}">
+        <div class="journey-head">
+            <span class="journey-num">02</span>
+            {% if top_state == 'done' %}{% badge 'approved' %}{% elif top_state == 'pending' %}{% badge 'pending' %}{% elif top_state == 'locked' %}<span class="badge no-dot"><i class="fa-solid fa-lock"></i> Жабық</span>{% elif application.status == 'rejected' %}{% badge 'rejected' %}{% else %}<span class="badge no-dot">Басталмаған</span>{% endif %}
+        </div>
+        <h3>Дипломдық тақырып</h3>
+        {% if topic %}
+            <p class="journey-title">{{ topic.title }}</p><p class="journey-text">{{ topic.description }}</p>
+        {% elif top_state == 'pending' %}
+            <p class="journey-title">{{ application.topic.title }}</p>
+            <div class="journey-text">{% if application.topic.proposed_by == 'student' %}<span class="badge badge-gold no-dot">Өз ұсынысым</span> {% endif %}{% chips application %}</div>
+        {% elif top_state == 'locked' %}
+            <p class="journey-text">Жетекшіңіз бекітілгеннен кейін оның тақырыптарын таңдай аласыз немесе өз тақырыбыңызды ұсына аласыз.</p>
+        {% else %}
+            <p class="journey-text">{% if application.status == 'rejected' %}«{{ application.topic.title }}» тақырыбы қабылданбады. Басқа тақырыпты таңдаңыз.{% else %}Жетекшіңіздің тақырыптарынан таңдаңыз немесе өз идеяңызды ұсыныңыз.{% endif %}</p>
+            <a class="btn btn-primary btn-sm" href="{% url 'student_topics' %}">Тақырып таңдау</a>
+        {% endif %}
+    </article>
+
+    <article class="card journey-card is-{{ pro_state }}">
+        <div class="journey-head">
+            <span class="journey-num">03</span>
+            {% if pro_state == 'locked' %}<span class="badge no-dot"><i class="fa-solid fa-lock"></i> Жабық</span>{% else %}<span class="badge badge-info no-dot">{{ files|length }} файл</span>{% endif %}
+        </div>
+        <h3>Жұмыс барысы</h3>
+        {% if pro_state == 'locked' %}
+            <p class="journey-text">Тақырыбыңыз ресми бекітілгеннен кейін жұмыс барысы бойынша файлдарды жүктей аласыз.</p>
+        {% elif not files %}
+            <p class="journey-text">Әзірге файл жүктелмеген. Алғашқы кезеңді жүктеп, жетекшіңізге көрсетіңіз.</p>
+            <a class="btn btn-primary btn-sm" href="{% url 'student_progress' %}">Файл жүктеу</a>
+        {% else %}{% with last=files.0 %}
+            <p class="journey-title">{{ last.title }}</p>
+            <p class="journey-text">Соңғы жүктеу: {{ last.created_at|date:"d.m.Y" }}{% if last.teacher_comment %}<br><i class="fa-regular fa-comment" style="color:var(--gold)"></i> Жетекшінің пікірі бар{% endif %}</p>
+            <a class="btn btn-ghost btn-sm" href="{% url 'student_progress' %}">Барлық файлдар</a>
+        {% endwith %}{% endif %}
+    </article>
+</div>
+
+{% if sup_history or app_history %}
+<section class="card" style="margin-top:24px;">
+    <div class="card-head"><div><h3><i class="fa-solid fa-clock-rotate-left"></i>Өтінімдер тарихы</h3><div class="sub">Жетекші мен тақырып бойынша барлық өтінімдеріңіз</div></div></div>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th>Түрі</th><th>Атауы</th><th>Күні</th><th>Бекіту</th><th>Нәтиже</th></tr></thead>
+        <tbody>
+        {% for r in sup_history %}
+            <tr><td><span class="badge badge-info no-dot"><i class="fa-solid fa-user-tie"></i> Жетекші</span></td><td>{{ r.teacher.full_name }}</td>
+                <td class="muted">{{ r.created_at|date:"d.m.Y" }}</td><td>{% chips r %}</td><td>{% badge r.status %}</td></tr>
+        {% endfor %}
+        {% for a in app_history %}
+            <tr><td><span class="badge badge-gold no-dot"><i class="fa-solid fa-book"></i> Тақырып</span></td><td title="{{ a.topic.title }}">{{ a.topic.title }}</td>
+                <td class="muted">{{ a.created_at|date:"d.m.Y" }}</td><td>{% chips a %}</td><td>{% badge a.status %}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+</section>
+{% endif %}
+{% endblock %}

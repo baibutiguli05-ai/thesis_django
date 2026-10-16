@@ -1,0 +1,55 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}Студенттер барысы{% endblock %}{% block crumb %}Студенттер барысы{% endblock %}
+{% block actions %}<a class="btn btn-primary" href="{% url 'topic_create' %}"><i class="fa-solid fa-plus"></i><span>Жаңа тақырып</span></a>{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><span class="eyebrow">Жетекшілік</span><h1>Студенттердің жұмыс барысы</h1><p>Бекітілген студенттеріңіздің тақырыптары, жүктелген файлдары және сіздің пікірлеріңіз.</p></div>
+</div>
+{% if not rows %}
+    <div class="card empty"><i class="fa-solid fa-user-graduate"></i><strong>Әзірге бекітілген студент жоқ</strong>Студенттердің жетекшілік өтінімдерін <a href="{% url 'teacher_home' %}" style="color:var(--gold)">Өтінімдер</a> бетінен қарай аласыз.</div>
+{% else %}
+<div class="stack">
+{% for row in rows %}{% with s=row.s %}
+    <details class="card student-card" id="s{{ s.id }}" {% if rows|length <= 3 %}open{% endif %}>
+        <summary class="student-head">
+            <span class="avatar avatar-lg">{{ s.full_name|initials }}</span>
+            <div class="student-info"><strong>{{ s.full_name }}</strong><span>{{ s.group_name }} · {{ s.major }}</span></div>
+            <div class="student-topic">
+                {% if s.topic %}<span class="eyebrow">Тақырып</span><div>{{ s.topic.title }}</div>
+                {% elif row.pending %}<span class="eyebrow" style="color:var(--warning)">Тақырып қаралуда</span><div>{{ row.pending.topic.title }}</div>
+                {% else %}<span class="eyebrow" style="color:var(--faint)">Тақырып</span><div class="muted-text">Әлі таңдалмаған</div>{% endif %}
+            </div>
+            <div class="student-metrics">
+                <div><strong>{{ s.files_n }}</strong><span>файл</span></div>
+                <div><strong>{{ s.last_upload|date:"d.m.Y"|default:"—" }}</strong><span>соңғы жүктеу</span></div>
+                {% if s.unreviewed %}<span class="badge badge-pending">{{ s.unreviewed }} жаңа</span>{% endif %}
+            </div>
+            <i class="fa-solid fa-chevron-down student-chevron"></i>
+        </summary>
+        <div class="student-body">
+            {% if s.files.all %}
+            <ol class="timeline">{% for f in s.files.all %}
+                <li>
+                    <div class="tl-dot {% if f.teacher_comment %}is-reviewed{% endif %}"><i class="fa-regular fa-file-lines"></i></div>
+                    <div class="tl-body">
+                        <div class="tl-head"><strong>{{ f.title }}</strong><span class="muted-text">{{ f.created_at|date:"d.m.Y H:i" }}</span></div>
+                        {% if f.note %}<p>{{ f.note|linebreaksbr }}</p>{% endif %}
+                        {% if f.file %}<a class="file-pill" href="{% url 'download' f.id %}" target="_blank"><i class="fa-solid fa-paperclip"></i>{{ f.original_name }}<span>{{ f.file_size|filesize }}</span></a>{% endif %}
+                        <form method="post" action="{% url 'teacher_comment' f.id %}" class="comment-form">{% csrf_token %}
+                            <input type="hidden" name="student_id" value="{{ s.id }}">
+                            <textarea name="comment" rows="2" placeholder="Студентке пікір қалдырыңыз…">{{ f.teacher_comment }}</textarea>
+                            <div class="comment-actions">
+                                {% if f.commented_at %}<span class="muted-text"><i class="fa-solid fa-check" style="color:var(--success)"></i> Пікір: {{ f.commented_at|date:"d.m.Y" }}</span>{% endif %}
+                                <button class="btn btn-ghost btn-sm"><i class="fa-regular fa-comment"></i>{% if f.teacher_comment %}Жаңарту{% else %}Пікір жіберу{% endif %}</button>
+                            </div>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}</ol>
+            {% else %}<div class="empty" style="padding:28px;"><i class="fa-regular fa-folder-open"></i>Студент әлі файл жүктемеген.</div>{% endif %}
+        </div>
+    </details>
+{% endwith %}{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

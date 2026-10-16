@@ -1,0 +1,45 @@
+{% extends 'auth/base_auth.html' %}
+{% block title %}Тіркелу{% endblock %}
+{% block hero %}
+    <span class="eyebrow">Жаңа аккаунт</span>
+    <h1>Зерттеу жолыңызды <em>бүгін</em> бастаңыз</h1>
+    <p>Тіркеліп, жетекші таңдаңыз немесе оқытушы ретінде тақырып ұсыныңыз.</p>
+    <ul class="auth-features">
+        <li><i class="fa-solid fa-user-graduate"></i><div><strong>Студенттер</strong><span>Жетекші, тақырып таңдау және жұмыс барысын жүктеу</span></div></li>
+        <li><i class="fa-solid fa-chalkboard-user"></i><div><strong>Оқытушылар</strong><span>Тақырып ұсыну және студенттерді басқару</span></div></li>
+        <li><i class="fa-solid fa-shield-halved"></i><div><strong>Әкімшілер</strong><span>Өтінімдер мен тақырыптарды бекіту</span></div></li>
+    </ul>
+{% endblock %}
+{% block card %}
+    <span class="eyebrow">Тіркелу</span>
+    <h2>Аккаунт ашу</h2>
+    <p class="lead">Университет порталына тіркелу үшін мәліметтерді толтырыңыз.</p>
+    {% if form.errors %}
+        <div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i><span>{% for f in form %}{% for e in f.errors %}{{ e }} {% endfor %}{% endfor %}{{ form.non_field_errors|join:" " }}</span></div>
+    {% endif %}
+    <form method="post">{% csrf_token %}
+        <div class="field">
+            <label for="full_name">Аты-жөні</label>
+            <div class="control"><i class="fa-regular fa-id-card"></i><input type="text" id="full_name" name="full_name" value="{{ form.full_name.value|default:'' }}" placeholder="Aibar Bolat" required></div>
+        </div>
+        <div class="field">
+            <label for="username">Логин</label>
+            <div class="control"><i class="fa-regular fa-user"></i><input type="text" id="username" name="username" value="{{ form.username.value|default:'' }}" placeholder="login" autocomplete="username" required></div>
+        </div>
+        <div class="field">
+            <label for="password">Құпия сөз <span class="hint">· кемінде 6 таңба, әріп + сан</span></label>
+            <div class="control"><i class="fa-solid fa-key"></i><input type="password" id="password" name="password" placeholder="Pass1234" autocomplete="new-password" required></div>
+        </div>
+        <div class="field">
+            <label>Рөлі</label>
+            <div class="role-picker" style="grid-template-columns:repeat(2,1fr)">
+                <input type="radio" id="r-student" name="role" value="student" {% if form.role.value != 'teacher' %}checked{% endif %}>
+                <label for="r-student"><i class="fa-solid fa-user-graduate"></i>Студент</label>
+                <input type="radio" id="r-teacher" name="role" value="teacher" {% if form.role.value == 'teacher' %}checked{% endif %}>
+                <label for="r-teacher"><i class="fa-solid fa-chalkboard-user"></i>Оқытушы</label>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top:8px;">Тіркелу <i class="fa-solid fa-arrow-right"></i></button>
+    </form>
+    <div class="auth-switch">Бұрын тіркелгенсіз бе? <a href="{% url 'login' %}">Кіру</a></div>
+{% endblock %}

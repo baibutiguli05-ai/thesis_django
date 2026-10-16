@@ -1,0 +1,30 @@
+{% extends 'auth/base_auth.html' %}
+{% block title %}Кіру{% endblock %}
+{% block hero %}
+    <span class="eyebrow">Academic Year 2026 / 2027</span>
+    <h1>Дипломдық тақырыбыңызды <em>бір жерден</em> таңдаңыз</h1>
+    <p>Тақырыптар каталогы, ғылыми жетекшілер және өтінімдер мәртебесі — барлығы бір кабинетте.</p>
+    <ul class="auth-features">
+        <li><i class="fa-solid fa-book-open"></i><div><strong>Тақырыптар каталогы</strong><span>Оқытушылар ұсынған бекітілген тақырыптар</span></div></li>
+        <li><i class="fa-solid fa-user-tie"></i><div><strong>Ғылыми жетекші</strong><span>CS квотасы мен тақырыптарын көріп таңдау</span></div></li>
+        <li><i class="fa-solid fa-circle-check"></i><div><strong>Екі сатылы бекіту</strong><span>Жетекші мен әкімші шешімін нақты уақытта бақылау</span></div></li>
+    </ul>
+{% endblock %}
+{% block card %}
+    <span class="eyebrow">Қош келдіңіз</span>
+    <h2>Жүйеге кіру</h2>
+    <p class="lead">Жалғастыру үшін логин мен құпия сөзді енгізіңіз.</p>
+    {% if error %}<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i><span>{{ error }}</span></div>{% endif %}
+    <form method="post">{% csrf_token %}
+        <div class="field">
+            <label for="username">Логин</label>
+            <div class="control"><i class="fa-regular fa-user"></i><input type="text" id="username" name="username" value="{{ request.POST.username }}" placeholder="Логинді енгізіңіз" autocomplete="username" autofocus required></div>
+        </div>
+        <div class="field">
+            <label for="password">Құпия сөз</label>
+            <div class="control"><i class="fa-solid fa-lock"></i><input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required></div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top:8px;">Кіру <i class="fa-solid fa-arrow-right"></i></button>
+    </form>
+    <div class="auth-switch">Тіркелмегенсіз бе? <a href="{% url 'register' %}">Аккаунт ашу</a></div>
+{% endblock %}

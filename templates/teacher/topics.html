@@ -1,0 +1,41 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}Менің тақырыптарым{% endblock %}{% block crumb %}Менің тақырыптарым{% endblock %}
+{% block actions %}<a class="btn btn-primary" href="{% url 'topic_create' %}"><i class="fa-solid fa-plus"></i><span>Жаңа тақырып</span></a>{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><span class="eyebrow">Тақырыптар · CRUD</span><h1>Менің тақырыптарым</h1>
+        <p>Жаңа немесе өзгертілген тақырып әкімшіге тексеруге жіберіледі, бекітілгеннен кейін ғана студенттерге көрінеді. Студент алған тақырыпты өзгертуге болмайды.</p></div>
+</div>
+
+<div class="pill-stats">
+    <span>{% badge 'pending' %} {{ by.pending }}</span><span>{% badge 'approved' %} {{ by.approved }}</span>
+    <span>{% badge 'taken' %} {{ by.taken }}</span><span>{% badge 'rejected' %} {{ by.rejected }}</span>
+    <div class="search" style="margin-left:auto"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Тақырып іздеу…" data-filter="#myTopics"></div>
+</div>
+
+{% if topics %}
+<div class="topics-grid" id="myTopics">
+    {% for t in topics %}
+        <article class="topic-card" data-item>
+            <div class="topic-top"><span class="topic-tag">Тақырып #{{ t.id }}</span>{% badge t.status %}</div>
+            <h4><a href="{% url 'topic_detail' t.id %}" class="plain-link">{{ t.title }}</a></h4>
+            <p>{{ t.description|default:"Сипаттама жоқ." }}</p>
+            <div class="topic-foot">
+                {% if t.status == 'taken' %}
+                    {% with s=t.student %}<div class="supervisor"><span class="avatar">{{ s.full_name|initials }}</span><div><strong>{{ s.full_name }}</strong><span>Студент бекітілді</span></div></div>{% endwith %}
+                {% else %}
+                    <span class="muted-text">{% if t.status == 'pending' %}<i class="fa-regular fa-clock"></i> Әкімші тексеруде{% elif t.status == 'approved' %}<i class="fa-regular fa-eye"></i> Студенттерге көрінеді{% else %}<i class="fa-regular fa-circle-xmark"></i> Әкімші қабылдамады{% endif %}</span>
+                    <div class="topic-actions">
+                        <a class="btn btn-ghost btn-sm" title="Өзгерту" href="{% url 'topic_update' t.id %}"><i class="fa-regular fa-pen-to-square"></i></a>
+                        <a class="btn btn-ghost btn-sm" title="Өшіру" href="{% url 'topic_delete' t.id %}"><i class="fa-regular fa-trash-can"></i></a>
+                    </div>
+                {% endif %}
+            </div>
+        </article>
+    {% endfor %}
+</div>
+<div class="card empty" id="myTopics-empty" style="display:none;"><i class="fa-regular fa-folder-open"></i><strong>Ештеңе табылмады</strong>Басқа кілт сөзбен іздеп көріңіз.</div>
+{% else %}
+<div class="card empty"><i class="fa-regular fa-lightbulb"></i><strong>Әзірге тақырып жоқ</strong>Алғашқы тақырыпты ұсыну үшін «Жаңа тақырып» батырмасын басыңыз.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}Тақырып таңдау{% endblock %}{% block crumb %}Тақырып таңдау{% endblock %}
+{% block actions %}{% if can_apply %}<button class="btn btn-primary" data-open="#proposeModal"><i class="fa-solid fa-plus"></i><span>Өз тақырыбымды ұсыну</span></button>{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <span class="eyebrow">2-кезең · Тақырып таңдау</span>
+        <h1>Дипломдық тақырып</h1>
+        <p>Жетекшіңіздің тақырыптарынан таңдаңыз немесе өз тақырыбыңызды ұсыныңыз. Таңдауды жетекші мен әкімші бекітеді.</p>
+    </div>
+</div>
+
+{% if not teacher %}
+    <div class="card empty">
+        <i class="fa-solid fa-lock"></i><strong>Алдымен ғылыми жетекші бекітілуі керек</strong>
+        Жетекшіңіз ресми бекітілгеннен кейін оның тақырыптарын таңдай аласыз.
+        <div style="margin-top:18px;"><a class="btn btn-primary" href="{% url 'student_teachers' %}">Жетекші таңдау <i class="fa-solid fa-arrow-right"></i></a></div>
+    </div>
+{% else %}
+
+    {% if topic %}
+        <section class="hero-status" style="margin-bottom:28px;">
+            <div>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><span class="eyebrow">Бекітілген тақырып</span>{% badge 'approved' %}</div>
+                <h2>{{ topic.title }}</h2>
+                <div class="hero-meta"><span><i class="fa-solid fa-user-tie"></i>{{ teacher.full_name }}</span>{% if topic.proposed_by == 'student' %}<span><i class="fa-solid fa-lightbulb"></i>Өз ұсынысым</span>{% endif %}</div>
+                <a href="{% url 'student_progress' %}" class="btn btn-gold" style="margin-top:18px;">Жұмыс барысын жүктеу <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+        </section>
+    {% elif application.status == 'pending' %}
+        <section class="card pending-card" style="margin-bottom:28px;"><div class="card-body">
+            <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;">
+                <div style="min-width:0"><span class="eyebrow">Қаралуда</span>
+                    <h3 class="serif" style="font-size:20px;font-weight:500;margin:8px 0 6px;">{{ application.topic.title }}</h3>
+                    <p style="color:var(--muted)">{{ application.topic.description }}</p></div>
+                {% badge 'pending' %}
+            </div>
+            <div class="approval-flow">
+                <div class="flow-step done"><i class="fa-solid fa-check"></i><div><strong>Өтінім жіберілді</strong><span>{{ application.created_at|date:"d.m.Y" }}</span></div></div>
+                <div class="flow-step {% if application.teacher_status == 'approved' %}done{% else %}wait{% endif %}"><i class="{% if application.teacher_status == 'approved' %}fa-solid fa-check{% else %}fa-regular fa-clock{% endif %}"></i><div><strong>Жетекші</strong><span>{{ application.teacher_status|status_label }}</span></div></div>
+                <div class="flow-step {% if application.admin_status == 'approved' %}done{% else %}wait{% endif %}"><i class="{% if application.admin_status == 'approved' %}fa-solid fa-check{% else %}fa-regular fa-clock{% endif %}"></i><div><strong>Әкімші</strong><span>{{ application.admin_status|status_label }}</span></div></div>
+            </div>
+        </div></section>
+    {% endif %}
+
+    {% if not topic %}
+    <div class="section-head">
+        <div><h3>{{ teacher.full_name }} тақырыптары</h3><p>{{ open_topics|length }} бос тақырып</p></div>
+        <div class="section-tools"><div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Тақырып іздеу…" data-filter="#topicsGrid"></div></div>
+    </div>
+    <div class="topics-grid" id="topicsGrid">
+        {% for tp in open_topics %}
+            <article class="topic-card" data-item>
+                <div class="topic-top"><span class="topic-tag">Тақырып #{{ tp.id }}</span>
+                    {% if tp.open_apps %}<span class="badge badge-pending no-dot">{{ tp.open_apps }} өтінім</span>{% else %}{% badge 'approved' 'Бос' %}{% endif %}</div>
+                <h4>{{ tp.title }}</h4>
+                <p>{{ tp.description|default:"Сипаттама жоқ." }}</p>
+                <div class="topic-foot">
+                    <div class="supervisor"><span class="avatar">{{ teacher.full_name|initials }}</span><div style="min-width:0"><strong>{{ teacher.full_name }}</strong><span>Ғылыми жетекші</span></div></div>
+                    {% if can_apply %}
+                        <form method="post" action="{% url 'student_apply_topic' %}" data-confirm="«{{ tp.title }}» тақырыбына өтінім жібересіз бе?">{% csrf_token %}
+                            <input type="hidden" name="topic_id" value="{{ tp.id }}"><button class="btn btn-primary btn-sm">Таңдау</button></form>
+                    {% else %}<button class="btn btn-ghost btn-sm" disabled>Таңдау</button>{% endif %}
+                </div>
+            </article>
+        {% endfor %}
+        {% if can_apply %}
+            <button class="topic-card topic-card-add" data-open="#proposeModal" type="button">
+                <span class="add-icon"><i class="fa-solid fa-plus"></i></span>
+                <strong>Өз тақырыбымды ұсыну</strong><span>Ұнайтын тақырып болмаса, өз идеяңызды жетекшіге ұсыныңыз</span>
+            </button>
+        {% endif %}
+    </div>
+    {% if not open_topics and not can_apply %}<div class="card empty"><i class="fa-regular fa-folder-open"></i><strong>Бос тақырыптар жоқ</strong>Жетекшіңіздің барлық тақырыптары таңдалған.</div>{% endif %}
+    <div class="card empty" id="topicsGrid-empty" style="display:none;"><i class="fa-regular fa-folder-open"></i><strong>Ештеңе табылмады</strong>Басқа кілт сөзбен іздеп көріңіз.</div>
+    {% endif %}
+
+    {% if app_history %}
+    <section class="card" style="margin-top:28px;">
+        <div class="card-head"><div><h3><i class="fa-solid fa-clock-rotate-left"></i>Тақырып өтінімдерім</h3></div></div>
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th>Тақырып</th><th>Түрі</th><th>Күні</th><th>Бекіту</th><th>Нәтиже</th></tr></thead>
+            <tbody>{% for a in app_history %}
+                <tr><td title="{{ a.topic.title }}">{{ a.topic.title }}</td>
+                    <td>{% if a.topic.proposed_by == 'student' %}<span class="badge badge-gold no-dot">Өз ұсынысым</span>{% else %}<span class="badge no-dot">Жетекшінің</span>{% endif %}</td>
+                    <td class="muted">{{ a.created_at|date:"d.m.Y" }}</td><td>{% chips a %}</td><td>{% badge a.status %}</td></tr>
+            {% endfor %}</tbody>
+        </table></div>
+    </section>
+    {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block modals %}
+<div class="modal" id="proposeModal">
+    <div class="modal-dialog" role="dialog" aria-modal="true">
+        <div class="modal-head">
+            <div><span class="eyebrow">Жаңа ұсыныс</span><h3 style="margin-top:6px;">Өз тақырыбымды ұсыну</h3><p>Ұсыныс жетекшіңізге ({{ teacher.full_name }}) және әкімшіге жіберіледі.</p></div>
+            <button class="icon-btn" type="button" data-close aria-label="Жабу"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'student_propose_topic' %}">{% csrf_token %}
+                <div class="field"><label for="p-title">Тақырып атауы</label><div class="control"><input type="text" id="p-title" name="title" required maxlength="255" placeholder="Тақырыптың толық атауы"></div></div>
+                <div class="field"><label for="p-desc">Сипаттамасы</label><div class="control"><textarea id="p-desc" name="description" rows="5" placeholder="Жұмыстың мақсаты, міндеттері, қолданылатын технологиялар…"></textarea></div></div>
+                <div class="form-actions"><button type="button" class="btn btn-ghost" data-close>Бас тарту</button><button type="submit" class="btn btn-primary">Жіберу <i class="fa-solid fa-paper-plane"></i></button></div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

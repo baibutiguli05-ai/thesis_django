@@ -1,0 +1,6 @@
+<div class="actions">
+    <form method="post" action="{{ action }}">{% csrf_token %}<input type="hidden" name="decision" value="approved">
+        <button class="btn btn-success btn-sm" {% if disabled %}disabled title="CS квотасы толды"{% endif %}><i class="fa-solid fa-check"></i>{{ approve_label|default:"Қабылдау" }}</button></form>
+    <form method="post" action="{{ action }}" data-confirm="Өтінімді қабылдамауға сенімдісіз бе?">{% csrf_token %}<input type="hidden" name="decision" value="rejected">
+        <button class="btn btn-danger btn-sm" title="Бас тарту"><i class="fa-solid fa-xmark"></i></button></form>
+</div>

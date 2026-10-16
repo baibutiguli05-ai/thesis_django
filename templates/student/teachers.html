@@ -1,0 +1,97 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}Ғылыми жетекшілер{% endblock %}{% block crumb %}Ғылыми жетекшілер{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <span class="eyebrow">1-кезең · Жетекші таңдау</span>
+        <h1>Ғылыми жетекшілер</h1>
+        <p>Әр жетекшінің CS мамандығы бойынша бос орындары мен тақырыптары. Өтінімді жетекші мен әкімші бекітуі керек.</p>
+    </div>
+</div>
+
+{% if teacher %}
+    <div class="note note-success" style="margin-bottom:24px;"><i class="fa-solid fa-circle-check"></i><span>Сіздің ғылыми жетекшіңіз — <strong>{{ teacher.full_name }}</strong>. Енді <a href="{% url 'student_topics' %}">тақырып таңдай аласыз</a>.</span></div>
+{% elif sup_request.status == 'pending' %}
+    <div class="note" style="margin-bottom:24px;"><i class="fa-solid fa-hourglass-half" style="color:var(--warning)"></i><span><strong>{{ sup_request.teacher.full_name }}</strong> жетекшіге өтініміңіз қаралуда.</span><span style="margin-left:auto">{% chips sup_request %}</span></div>
+{% elif sup_request.status == 'rejected' %}
+    <div class="note note-danger" style="margin-bottom:24px;"><i class="fa-solid fa-circle-xmark"></i><span><strong>{{ sup_request.teacher.full_name }}</strong> жетекшіге өтініміңіз қабылданбады. Басқа жетекшіге өтінім жібере аласыз.</span></div>
+{% endif %}
+
+<div class="section-head">
+    <div><h3>{{ directory|length }} жетекші</h3><p>Сіздің мамандығыңыз: <strong>{{ student.major }}</strong>{% if student.major == 'CS' %} — CS квотасы есептеледі{% endif %}</p></div>
+    <div class="section-tools">
+        <label class="toggle"><input type="checkbox" id="onlyFree"> <span>Тек бос орны барлар</span></label>
+        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Аты, бағыты, тақырып…" data-filter="#teacherGrid"></div>
+    </div>
+</div>
+
+<div class="teacher-grid" id="teacherGrid">
+{% for d in directory %}{% with t=d.obj %}
+    <article class="card teacher-card {% if teacher.id == t.id %}is-mine{% endif %}" data-item data-free="{% if d.cs_remaining %}1{% else %}0{% endif %}">
+        <div class="teacher-top">
+            <span class="avatar avatar-lg">{{ t.full_name|initials }}</span>
+            <div style="min-width:0">
+                <h4><a href="{% url 'teacher_detail' t.id %}" class="plain-link">{{ t.full_name }}</a></h4>
+                <div class="teacher-meta">{{ t.academic_title }}</div>
+                <div class="teacher-meta"><i class="fa-solid fa-building-columns"></i> {{ t.department }}</div>
+            </div>
+            {% if teacher.id == t.id %}<span class="badge badge-approved" style="margin-left:auto">Менің жетекшім</span>
+            {% elif sup_request.status == 'pending' and sup_request.teacher_id == t.id %}<span class="badge badge-pending" style="margin-left:auto">Өтінім жіберілді</span>{% endif %}
+        </div>
+        {% if t.research_area %}<p class="teacher-area"><i class="fa-solid fa-flask"></i> {{ t.research_area }}</p>{% endif %}
+        <div class="quota">
+            <div class="quota-row"><span>CS бос орындар</span><strong class="{% if not d.cs_remaining %}text-danger{% endif %}">{{ d.cs_remaining }} <span>/ {{ t.cs_quota }}</span></strong></div>
+            <div class="quota-bar"><span style="width:{{ d.cs_taken|percent:t.cs_quota }}%" class="{% if not d.cs_remaining %}full{% endif %}"></span></div>
+        </div>
+        <div class="teacher-stats">
+            <div><strong>{{ d.topics_total }}</strong><span>тақырып</span></div>
+            <div><strong>{{ d.topics_free }}</strong><span>бос тақырып</span></div>
+            <div><strong>{{ d.students }}</strong><span>студент</span></div>
+        </div>
+        <details class="topic-list">
+            <summary>Тақырыптарын көру <i class="fa-solid fa-chevron-down"></i></summary>
+            {% if d.topics %}<ul>
+                {% for tp in d.topics %}<li><div><strong>{{ tp.title }}</strong>{% if tp.description %}<span>{{ tp.description }}</span>{% endif %}</div>
+                    {% if tp.status == 'taken' %}{% badge 'taken' 'Бос емес' %}{% else %}{% badge 'approved' 'Бос' %}{% endif %}</li>{% endfor %}
+            </ul>{% else %}<p class="muted-text">Бекітілген тақырыптар әзірге жоқ.</p>{% endif %}
+        </details>
+        <div class="teacher-foot">
+            {% if teacher.id == t.id %}
+                <a class="btn btn-ghost btn-block" href="{% url 'student_topics' %}">Тақырып таңдау <i class="fa-solid fa-arrow-right"></i></a>
+            {% elif can_request and not student.major == 'CS' or can_request and d.cs_remaining %}
+                <button class="btn btn-primary btn-block" data-open="#requestModal" data-fill-teacher-id="{{ t.id }}" data-fill-teacher-name="{{ t.full_name }}"><i class="fa-solid fa-paper-plane"></i> Өтінім жіберу</button>
+            {% else %}
+                <button class="btn btn-ghost btn-block" disabled>{% if student.major == 'CS' and not d.cs_remaining %}Орын жоқ{% elif teacher %}Жетекшіңіз бекітілген{% else %}Өтініміңіз қаралуда{% endif %}</button>
+            {% endif %}
+        </div>
+    </article>
+{% endwith %}{% endfor %}
+</div>
+<div class="card empty" id="teacherGrid-empty" style="display:none;"><i class="fa-regular fa-folder-open"></i><strong>Ештеңе табылмады</strong>Басқа кілт сөзбен іздеп көріңіз.</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal" id="requestModal">
+    <div class="modal-dialog" role="dialog" aria-modal="true">
+        <div class="modal-head">
+            <div><span class="eyebrow">Жетекшіге өтінім</span><h3 style="margin-top:6px;" data-slot="teacher_name">—</h3><p>Өтінімді алдымен жетекші, содан кейін әкімші қарайды.</p></div>
+            <button class="icon-btn" type="button" data-close aria-label="Жабу"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'student_request_supervisor' %}">{% csrf_token %}
+                <input type="hidden" name="teacher_id" data-slot="teacher_id">
+                <div class="field"><label for="msg">Хабарлама <span class="hint">· міндетті емес</span></label>
+                    <div class="control"><textarea id="msg" name="message" rows="4" placeholder="Неліктен осы жетекшіні таңдадыңыз? Қандай бағытқа қызығасыз?"></textarea></div></div>
+                <div class="form-actions"><button type="button" class="btn btn-ghost" data-close>Бас тарту</button><button type="submit" class="btn btn-primary">Жіберу <i class="fa-solid fa-paper-plane"></i></button></div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('onlyFree').addEventListener('change', function () {
+    document.querySelectorAll('#teacherGrid [data-item]').forEach(c => c.classList.toggle('hide-full', this.checked && c.dataset.free === '0'));
+});
+</script>
+{% endblock %}
