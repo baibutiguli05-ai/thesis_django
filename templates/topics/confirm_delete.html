@@ -1,0 +1,19 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}Тақырыпты өшіру{% endblock %}{% block crumb %}Өшіру #{{ topic.id }}{% endblock %}
+{% block content %}
+<section class="card" style="max-width:600px;margin:40px auto 0;">
+    <div class="card-body confirm-body">
+        <span class="confirm-icon" style="background:var(--danger-bg);color:var(--danger);"><i class="fa-regular fa-trash-can"></i></span>
+        <span class="eyebrow">DeleteView</span>
+        <h2 class="serif" style="font-weight:500;margin:8px 0 10px;">Тақырыпты өшіру</h2>
+        <p>«<strong>{{ topic.title }}</strong>» тақырыбын өшіруге сенімдісіз бе?</p>
+        {% if topic.app_count %}<p class="muted-text" style="margin-top:8px;">Бұл тақырыпқа берілген {{ topic.app_count }} өтінім де өшіріледі.</p>{% endif %}
+        <form method="post">{% csrf_token %}
+            <div class="form-actions">
+                <a class="btn btn-ghost" href="{{ topic.get_absolute_url }}">Бас тарту</a>
+                <button type="submit" class="btn btn-danger" style="background:var(--danger);color:#fff;"><i class="fa-regular fa-trash-can"></i>Иә, өшіру</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

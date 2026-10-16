@@ -1,0 +1,60 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}{{ topic.title }}{% endblock %}{% block crumb %}Тақырып #{{ topic.id }}{% endblock %}
+{% block actions %}<a class="btn btn-ghost" href="{% url 'topic_list' %}"><i class="fa-solid fa-arrow-left"></i><span>Каталог</span></a>{% endblock %}
+{% block content %}
+<div class="detail-grid">
+    <section class="card detail-main">
+        <div class="card-body">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+                <span class="eyebrow">Тақырып #{{ topic.id }} · DetailView</span>
+                {% if topic.status == 'approved' %}{% badge 'approved' 'Бос' %}{% else %}{% badge topic.status %}{% endif %}
+                {% if topic.proposed_by == 'student' %}<span class="badge badge-gold no-dot">Студент ұсынған</span>{% endif %}
+            </div>
+            <h1 class="serif detail-title">{{ topic.title }}</h1>
+            <div class="tag-row" style="margin:14px 0 22px;">
+                {% for tag in topic.tags.all %}<a class="tag" href="{% url 'topic_list' %}?tag={{ tag.id }}">#{{ tag.name }}</a>{% empty %}<span class="muted-text">Тег жоқ</span>{% endfor %}
+            </div>
+            <h3 class="detail-h">Сипаттамасы</h3>
+            <p class="detail-text">{{ topic.description|default:"Сипаттама берілмеген."|linebreaksbr }}</p>
+
+            {% if can_edit %}
+            <div class="form-actions" style="justify-content:flex-start;margin-top:28px;padding-top:20px;border-top:1px solid var(--line);">
+                <a class="btn btn-primary" href="{% url 'topic_update' topic.id %}"><i class="fa-regular fa-pen-to-square"></i>Өңдеу</a>
+                <a class="btn btn-danger" href="{% url 'topic_delete' topic.id %}"><i class="fa-regular fa-trash-can"></i>Өшіру</a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <aside class="stack">
+        <section class="card"><div class="card-body">
+            <span class="eyebrow">Ғылыми жетекші</span>
+            <a class="person" href="{% url 'teacher_detail' topic.teacher.id %}" style="margin-top:12px;text-decoration:none;">
+                <span class="avatar avatar-lg">{{ topic.teacher.full_name|initials }}</span>
+                <div><strong>{{ topic.teacher.full_name }}</strong><span>{{ topic.teacher.academic_title }}</span></div>
+            </a>
+            <p class="muted-text" style="margin-top:10px;">{{ topic.teacher.department }}</p>
+        </div></section>
+
+        <section class="card"><div class="card-body">
+            <dl class="facts">
+                <dt>Статус</dt><dd>{{ topic.status|status_label }}</dd>
+                <dt>Ұсынған</dt><dd>{% if topic.proposed_by == 'student' %}Студент{% else %}Оқытушы{% endif %}</dd>
+                <dt>Құрылған</dt><dd>{{ topic.created_at|date:"d.m.Y" }}</dd>
+                {% if topic.reviewed_at %}<dt>Тексерілген</dt><dd>{{ topic.reviewed_at|date:"d.m.Y" }}</dd>{% endif %}
+                <dt>Өтінімдер</dt><dd>{{ app_stats.total }} ({{ app_stats.open }} ашық)</dd>
+                {% if topic.student %}<dt>Студент</dt><dd>{{ topic.student.full_name }}</dd>{% endif %}
+            </dl>
+        </div></section>
+
+        {% if similar %}
+        <section class="card"><div class="card-body">
+            <span class="eyebrow">Ұқсас тақырыптар</span>
+            <ul class="similar">
+                {% for s in similar %}<li><a href="{{ s.get_absolute_url }}">{{ s.title }}</a><span>{{ s.teacher.full_name }} · {{ s.shared }} ортақ тег</span></li>{% endfor %}
+            </ul>
+        </div></section>
+        {% endif %}
+    </aside>
+</div>
+{% endblock %}

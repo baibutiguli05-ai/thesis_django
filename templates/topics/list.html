@@ -1,0 +1,79 @@
+{% extends 'base.html' %}{% load thesis_tags %}
+{% block title %}Тақырыптар каталогы{% endblock %}{% block crumb %}Тақырыптар каталогы{% endblock %}
+{% block actions %}{% if can_create %}<a class="btn btn-primary" href="{% url 'topic_create' %}"><i class="fa-solid fa-plus"></i><span>Жаңа тақырып</span></a>{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <span class="eyebrow">Каталог · ListView</span>
+        <h1>Тақырыптар каталогы</h1>
+        <p>Барлық дипломдық тақырыптар: іздеу, сүзу, сұрыптау және беттеу.</p>
+    </div>
+</div>
+
+<div class="stats">
+    <div class="card stat"><div class="stat-top"><span class="stat-label">Барлық тақырып</span><span class="stat-icon"><i class="fa-solid fa-layer-group"></i></span></div><div class="stat-value">{{ stats.total }}</div><div class="stat-foot">сізге көрінетін</div></div>
+    <div class="card stat"><div class="stat-top"><span class="stat-label">Бос</span><span class="stat-icon"><i class="fa-solid fa-circle-check"></i></span></div><div class="stat-value">{{ stats.approved }}</div><div class="stat-foot">таңдауға болады</div></div>
+    <div class="card stat"><div class="stat-top"><span class="stat-label">Таңдалған</span><span class="stat-icon"><i class="fa-solid fa-user-check"></i></span></div><div class="stat-value">{{ stats.taken }}</div><div class="stat-foot">студент бекітілген</div></div>
+    <div class="card stat"><div class="stat-top"><span class="stat-label">Тексерілуде</span><span class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></span></div><div class="stat-value">{{ stats.pending }}</div><div class="stat-foot">әкімші шешімін күтуде</div></div>
+</div>
+
+<form method="get" class="card filter-bar">
+    <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ f.q }}" placeholder="Атауы, сипаттамасы, оқытушы…"></div>
+    <div class="control"><select name="teacher" class="input" onchange="this.form.submit()">
+        <option value="">Барлық оқытушылар</option>
+        {% for t in teachers %}<option value="{{ t.id }}" {% if f.teacher == t.id|stringformat:"d" %}selected{% endif %}>{{ t.full_name }}</option>{% endfor %}
+    </select><i class="fa-solid fa-chevron-down chevron"></i></div>
+    <div class="control"><select name="status" class="input" onchange="this.form.submit()">
+        <option value="">Кез келген статус</option>
+        <option value="approved" {% if f.status == 'approved' %}selected{% endif %}>Бос (бекітілген)</option>
+        <option value="taken" {% if f.status == 'taken' %}selected{% endif %}>Таңдалған</option>
+        {% if role != 'student' %}<option value="pending" {% if f.status == 'pending' %}selected{% endif %}>Тексерілуде</option>
+        <option value="rejected" {% if f.status == 'rejected' %}selected{% endif %}>Қабылданбады</option>{% endif %}
+    </select><i class="fa-solid fa-chevron-down chevron"></i></div>
+    <div class="control"><select name="sort" class="input" onchange="this.form.submit()">
+        {% for k, label in sorts %}<option value="{{ k }}" {% if f.sort == k %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select><i class="fa-solid fa-chevron-down chevron"></i></div>
+    {% if f.tag %}<input type="hidden" name="tag" value="{{ f.tag }}">{% endif %}
+    <button class="btn btn-primary" type="submit">Іздеу</button>
+    {% if f.q or f.teacher or f.status or f.tag or f.sort != 'new' %}<a class="btn btn-ghost" href="{% url 'topic_list' %}">Тазалау</a>{% endif %}
+</form>
+
+<div class="tag-cloud">
+    {% for tag in tags %}
+        <a href="?{% if f.q %}q={{ f.q|urlencode }}&{% endif %}{% if f.teacher %}teacher={{ f.teacher }}&{% endif %}{% if f.status %}status={{ f.status }}&{% endif %}sort={{ f.sort }}{% if f.tag != tag.id|stringformat:'d' %}&tag={{ tag.id }}{% endif %}"
+           class="tag {% if f.tag == tag.id|stringformat:'d' %}active{% endif %}">#{{ tag.name }} <span>{{ tag.n }}</span></a>
+    {% endfor %}
+</div>
+
+<p class="muted-text" style="margin:0 0 14px;">Табылды: {{ paginator.count }} тақырып</p>
+
+{% if topics %}
+<div class="topics-grid">
+    {% for t in topics %}
+        <article class="topic-card">
+            <div class="topic-top"><span class="topic-tag">#{{ t.id }} · {{ t.teacher.full_name }}</span>{% if t.status == 'approved' %}{% badge 'approved' 'Бос' %}{% else %}{% badge t.status %}{% endif %}</div>
+            <h4><a class="plain-link" href="{{ t.get_absolute_url }}">{{ t.title }}</a></h4>
+            <p>{{ t.description|default:"Сипаттама жоқ."|truncatechars:150 }}</p>
+            <div class="tag-row">{% for tag in t.tags.all %}<span class="tag tag-sm">#{{ tag.name }}</span>{% endfor %}</div>
+            <div class="topic-foot">
+                <span class="muted-text"><i class="fa-regular fa-file-lines"></i> {{ t.app_count }} өтінім · {{ t.created_at|date:"d.m.Y" }}</span>
+                <a class="btn btn-ghost btn-sm" href="{{ t.get_absolute_url }}">Толығырақ <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+        </article>
+    {% endfor %}
+</div>
+
+{% if is_paginated %}
+<div class="card-foot card" style="margin-top:20px;">
+    <span>Бет: {{ page_obj.number }} / {{ paginator.num_pages }}</span>
+    <div class="pagination">
+        <a href="?{{ querystring }}{% if querystring %}&{% endif %}page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}" class="{% if not page_obj.has_previous %}disabled{% endif %}"><i class="fa-solid fa-chevron-left"></i></a>
+        {% for n in paginator.page_range %}<a href="?{{ querystring }}{% if querystring %}&{% endif %}page={{ n }}" class="{% if n == page_obj.number %}active{% endif %}">{{ n }}</a>{% endfor %}
+        <a href="?{{ querystring }}{% if querystring %}&{% endif %}page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ paginator.num_pages }}{% endif %}" class="{% if not page_obj.has_next %}disabled{% endif %}"><i class="fa-solid fa-chevron-right"></i></a>
+    </div>
+</div>
+{% endif %}
+{% else %}
+<div class="card empty"><i class="fa-regular fa-folder-open"></i><strong>Ештеңе табылмады</strong>Сүзгілерді өзгертіп көріңіз.</div>
+{% endif %}
+{% endblock %}
